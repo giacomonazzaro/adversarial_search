@@ -23,14 +23,20 @@ void insert(GridConnect4& grid, int column, int color) {
 }
 
 void print_grid(const GridConnect4& grid) {
+    for (int i = 0; i < 8; ++i) 
+        printf("___");
+
+    printf("\n\n");
     for (int i = 0; i < 6; ++i) {
         for (int k = 0; k < 7; ++k) {
-            if(grid[i*7 + k] == 0)  printf("  .");
+            if(grid[i*7 + k] == 0)  printf("  •");
             if(grid[i*7 + k] == 1)  printf("  X");
             if(grid[i*7 + k] == -1) printf("  O");
         }
         printf("\n");
     }
+    for (int i = 0; i < 8; ++i) printf("___");
+    printf("\n");
     for (int k = 0; k < 7; ++k) printf("  %d", k+1);
     printf("\n");
 }
@@ -156,7 +162,7 @@ int minimax(const State& state, bool max, int depth, int& best_move) {
     int dummy;
     int value = minimax(children[0].first, not max, depth-1, dummy);
     best_move = children[0].second;
-    for (int i = 1; i < children.size(); ++i) {
+    for (int i = 0; i < children.size(); ++i) {
         const auto& child = children[i].first;
         int new_val = minimax(child, not max, depth-1, dummy);
         if(max and new_val > value) {
@@ -182,9 +188,11 @@ int alpha_beta_search(const State& state, bool max, int alpha, int beta, int dep
     if(children.size() == 0) return 0;
     
     int dummy;
-    int value = alpha_beta_search(children[0].first, not max, alpha, beta, depth-1, dummy);
-    best_move = children[0].second;
-    for (int i = 1; i < children.size(); ++i) {
+    int start = rand() % children.size();
+    int value = alpha_beta_search(children[start].first, not max, alpha, beta, depth-1, dummy);
+    best_move = children[start].second;
+    for (int i = 0; i < children.size(); ++i) {
+        if(i == start) continue;
         const auto& child = children[i].first;
         int new_value = alpha_beta_search(child, not max, alpha, beta, depth-1, dummy);
         if(max) {
@@ -244,9 +252,9 @@ void ai_move(GridConnect4& grid, int color, int depth) {
     auto value = alpha_beta_search<GridConnect4>(grid, color>0, depth, move);
     insert(grid, move, color);
     printf("(%d) ", depth);
-    printf("move: %d, value: %d\n", move+1, value);
-    if(value * color > 0) printf("I won!!!\n");
-    if(value * color < 0) printf("I lost!!!\n");
+    printf("ai move: %d\n", move+1);
+    if(value * color > 0) printf("I will win in %d moves!!!\n", depth - value * color);
+    if(value * color < 0) printf("I will lose in %d moves!!!\n", depth + value * color);
 }
 
 bool is_full(const GridConnect4& grid) {
@@ -259,26 +267,31 @@ bool is_full(const GridConnect4& grid) {
 
 void beat_ai() {
     GridConnect4 grid (6*7, 0);
+    srand(76);
     int player = 1;
     int human_player = 1;
     int ai_player = -human_player;
+    int turn = 0;
     insert(grid, 3, ai_player);
-
     print_grid(grid);
     while(true) {
-        if(player == ai_player)
+        if(player == ai_player) {
+            int depth = 11;
+            if(turn > 15) depth = 15;
+            if(turn > 30) depth = 30;
             ai_move(grid, ai_player, 11);
+        }
         else {
-            ai_move(grid, -ai_player, 7);
-
-            // printf("  next move: ");
-            // scanf("%d", &col);
-            // if(col < 1 or col > 7) continue;
-            // insert(grid, col-1, human_player);
+            printf("  next move: ");
+            int col;
+            scanf("%d", &col);
+            if(col < 1 or col > 7) continue;
+            insert(grid, col-1, human_player);
         }
         printf("\n");   
         printf("\n");
 
+        turn += 1;
         player = -player;
         print_grid(grid);
         if(get_utility(grid) != 0) {
